@@ -5,7 +5,7 @@ local Players = CommonUtil.GetService("Players")
 
 local AUTLevelUtil = {}
 
-AUTLevelUtil.TeleportLocations = {
+local TeleportLocations = {
 	["Alabasta"] = Vector3.new(2085.529, 945.397, -2417.796),
 	["Beach"] = Vector3.new(607.062, 917.219, -1989.912),
 	["Boss Spawn Room"] = Vector3.new(19153.26, 910.548, 118.567),
@@ -60,6 +60,7 @@ local ShardRarities = {
 }
 
 AUTLevelUtil.ShardRarities = ShardRarities
+AUTLevelUtil.TeleportLocations = TeleportLocations
 AUTLevelUtil.AllowedAbilities = ShardRarities.Common
 AUTLevelUtil.ShardsPerAbility = 5
 AUTLevelUtil.FarmInterval = 0.1
