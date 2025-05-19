@@ -1,91 +1,148 @@
+-- ✅ Load Fluent UI + Addons
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
+-- ✅ Load utility modules
+local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
 local AUTLevelUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/AUTLevelUtil.lua"))()
 
+-- ✅ Create main Fluent window
 local Window = Fluent:CreateWindow({
-	Title = "SunnyDale | AUT Level Hub | By Supreme",
-	SubTitle = "Shard Auto-Level",
-	TabWidth = 160,
-	Size = UDim2.fromOffset(580, 460),
-	Acrylic = true,
-	Theme = "Dark",
-	MinimizeKey = Enum.KeyCode.LeftControl
+    Title = "SunnyDale | AUT Level Hub | By Supreme",
+    SubTitle = "Shard automation & teleport tools",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
 })
 
+-- ✅ Create and order tabs
 local Tabs = {
-	Main = Window:AddTab({ Title = "Main", Icon = "activity" }),
-	Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
+    AutoLevel = Window:AddTab({ Title = "Auto-Level", Icon = "activity" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "map" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
+-- ✅ Notification
 Fluent:Notify({
-	Title = "SunnyDale Hub",
-	Content = "AUT Auto-Level Hub Loaded.",
-	Duration = 5
+    Title = "SunnyDale Loaded",
+    Content = "AUT Level Hub is now active.",
+    Duration = 5
 })
 
-Tabs.Main:AddParagraph({
-	Title = "Auto-Level",
-	Content = "Auto-Levels you up until maximum level - PS - Uses 10K Shards per cycle (So it uses a lot lol)."
+-- 📂 AUTO-LEVEL TAB
+Tabs.AutoLevel:AddParagraph({
+    Title = "Auto-Level System",
+    Content = "Automatically rolls banners, converts shards, and levels up."
 })
 
-local Toggle = Tabs.Main:AddToggle("AutoFarmToggle", {
-	Title = "Enable Auto-Level",
-	Description = "Enabled the Auto Level Farm.",
-	Default = false
+-- Toggle: Enable/Disable Auto-Level
+local Toggle = Tabs.AutoLevel:AddToggle("AutoFarmToggle", {
+    Title = "Enable Auto-Level",
+    Description = "Runs farm + XP logic in loop.",
+    Default = false
 })
 
 Toggle:OnChanged(function(state)
-	if state then
-		AUTLevelUtil.IsMonitoring = true
-		AUTLevelUtil.RunLevelWatcher()
-		Fluent:Notify({ Title = "Farming", Content = "Auto-leveling started." })
-	else
-		AUTLevelUtil.Reset()
-		Fluent:Notify({ Title = "Farming", Content = "Stopped." })
-	end
+    if state then
+        AUTLevelUtil.IsMonitoring = true
+        AUTLevelUtil.RunLevelWatcher()
+        Fluent:Notify({ Title = "Auto-Leveling", Content = "Farming started." })
+    else
+        AUTLevelUtil.Reset()
+        Fluent:Notify({ Title = "Auto-Leveling", Content = "Farming stopped." })
+    end
 end)
 
-Tabs.Main:AddSlider("FarmDelaySlider", {
-	Title = "Farm Delay (Seconds)",
-	Description = "Interval Per XP Cycle.",
-	Default = 0.1,
-	Min = 0.05,
-	Max = 1,
-	Rounding = 2,
-	Callback = function(val)
-		AUTLevelUtil.FarmInterval = val
-	end
+-- Slider: Farming interval
+Tabs.AutoLevel:AddSlider("FarmDelaySlider", {
+    Title = "Farm Delay (Seconds)",
+    Description = "Time between shard conversion cycles.",
+    Default = 0.1,
+    Min = 0.05,
+    Max = 1,
+    Rounding = 2,
+    Callback = function(val)
+        AUTLevelUtil.FarmInterval = val
+    end
 }):SetValue(0.1)
 
-Tabs.Main:AddDropdown("ShardRarity", {
-	Title = "Shard Rarity to Sell",
-	Description = "Selects the Ability Shards to sell.",
-	Values = { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic" },
-	Multi = true,
-	Default = { "Common" },
-	Callback = function(selected)
-		local combined = {}
-		for _, rarity in ipairs(selected) do
-			local list = AUTLevelUtil.ShardRarities[rarity]
-			if list then
-				for _, id in ipairs(list) do
-					table.insert(combined, id)
-				end
-			end
-		end
-		AUTLevelUtil.AllowedAbilities = combined
-	end
-}):SetValue({ "Common" })
+-- Dropdown: Select shard rarity to sell
+Tabs.AutoLevel:AddDropdown("ShardRarity", {
+    Title = "Shard Rarity to Sell",
+    Description = "Select a rarity tier to farm for XP.",
+    Values = { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic" },
+    Default = "Common",
+    Multi = false,
+    Callback = function(rarity)
+        AUTLevelUtil.SetShardRarity(rarity)
+    end
+}):SetValue("Common")
 
+local selectedTeleport = nil
+local locationNames = {}
+
+local locationNames = {}
+
+if AUTLevelUtil.TeleportLocations then
+	for name in pairs(AUTLevelUtil.TeleportLocations) do
+		table.insert(locationNames, name)
+	end
+	table.sort(locationNames)
+else
+	warn("[SunnyDaleHub] AUTLevelUtil.TeleportLocations is missing or nil")
+end
+
+local section = Tabs.Misc:AddSection("Teleports")
+
+section:AddDropdown("TeleportLocation", {
+    Title = "Choose a Location",
+    Description = "Select where to teleport",
+    Values = locationNames,
+    Multi = false,
+    Callback = function(selected)
+        selectedTeleport = AUTLevelUtil.TeleportLocations[selected]
+    end
+})
+
+section:AddButton({
+    Title = "Teleport",
+    Description = "Instantly teleport to the selected location",
+    Callback = function()
+        if not selectedTeleport then
+            Fluent:Notify({
+                Title = "Teleport Failed",
+                Content = "You must select a location.",
+                Duration = 3
+            })
+            return
+        end
+
+        local success = CommonUtil.Teleport(selectedTeleport)
+        if not success then
+            Fluent:Notify({
+                Title = "Teleport Error",
+                Content = "Could not find your character. Try again.",
+                Duration = 3
+            })
+        end
+    end
+})
+
+-- ⚙️ SETTINGS TAB: Save + Config
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:SetLibrary(Fluent)
+
 SaveManager:IgnoreThemeSettings()
 InterfaceManager:SetFolder("SunnyDaleHub")
 SaveManager:SetFolder("SunnyDaleHub/Config")
+
 InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
-Window:SelectTab(1)
+-- Startup behavior
+Window:SelectTab(2) -- Auto-Level default
 SaveManager:LoadAutoloadConfig()
