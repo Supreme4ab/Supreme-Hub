@@ -1,4 +1,3 @@
--- AUTLevelUtil.lua (Clean Final Version)
 local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
 local Players = CommonUtil.GetService("Players")
 
