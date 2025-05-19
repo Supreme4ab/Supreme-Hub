@@ -7,6 +7,7 @@ local Services = setmetatable({}, {
    end
 })
 
+
 --Knit Remote Cache
 local RemoteCache = {}
 
@@ -130,6 +131,33 @@ function CommonUtil.DeepPrint(tbl, indent)
            print(pad .. tostring(k) .. " = " .. tostring(v))
        end
    end
+end
+
+--TP
+
+function CommonUtil.Teleport(position)
+	local player = CommonUtil.GetService("Players").LocalPlayer
+	local character = player and player.Character or player.CharacterAdded:Wait()
+	local rootPart = character:WaitForChild("HumanoidRootPart", 5)
+	if not rootPart then return false end
+
+	local wasAnchored = rootPart.Anchored
+	rootPart.Anchored = true
+	rootPart.Velocity = Vector3.zero
+	rootPart.RotVelocity = Vector3.zero
+
+	if character.PivotTo then
+		character:PivotTo(CFrame.new(position))
+	else
+		rootPart.CFrame = CFrame.new(position)
+	end
+
+	-- Restore anchoring state
+	task.delay(0.1, function()
+		rootPart.Anchored = wasAnchored
+	end)
+
+	return true
 end
 
 function CommonUtil.Log(...)
