@@ -1,13 +1,10 @@
--- ✅ Load Fluent UI + Addons
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
--- ✅ Load utility modules
 local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
-local AUTLevelUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/AUTLevelUtil.lua"))()
+local AUTLevelUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/SunniHubTest/main/Modules/AUTLevelModule.lua"))()
 
--- ✅ Create main Fluent window
 local Window = Fluent:CreateWindow({
     Title = "SunnyDale | AUT Level Hub | By Supreme",
     SubTitle = "Shard automation & teleport tools",
@@ -18,7 +15,6 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- ✅ Create and order tabs
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
     AutoLevel = Window:AddTab({ Title = "Auto-Level", Icon = "activity" }),
@@ -26,20 +22,17 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- ✅ Notification
 Fluent:Notify({
     Title = "SunnyDale Loaded",
     Content = "AUT Level Hub is now active.",
     Duration = 5
 })
 
--- 📂 AUTO-LEVEL TAB
 Tabs.AutoLevel:AddParagraph({
     Title = "Auto-Level System",
     Content = "Automatically rolls banners, converts shards, and levels up."
 })
 
--- Toggle: Enable/Disable Auto-Level
 local Toggle = Tabs.AutoLevel:AddToggle("AutoFarmToggle", {
     Title = "Enable Auto-Level",
     Description = "Runs farm + XP logic in loop.",
@@ -57,7 +50,6 @@ Toggle:OnChanged(function(state)
     end
 end)
 
--- Slider: Farming interval
 Tabs.AutoLevel:AddSlider("FarmDelaySlider", {
     Title = "Farm Delay (Seconds)",
     Description = "Time between shard conversion cycles.",
@@ -70,21 +62,18 @@ Tabs.AutoLevel:AddSlider("FarmDelaySlider", {
     end
 }):SetValue(0.1)
 
--- Dropdown: Select shard rarity to sell
 Tabs.AutoLevel:AddDropdown("ShardRarity", {
     Title = "Shard Rarity to Sell",
-    Description = "Select a rarity tier to farm for XP.",
+    Description = "Select one or more rarity tiers to farm for XP.",
     Values = { "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic" },
-    Default = "Common",
-    Multi = false,
-    Callback = function(rarity)
-        AUTLevelUtil.SetShardRarity(rarity)
+    Default = { "Common" },
+    Multi = true,
+    Callback = function(rarities)
+        AUTLevelUtil.SetShardRarity(rarities)
     end
-}):SetValue("Common")
+}):SetValue({ "Common" })
 
 local selectedTeleport = nil
-local locationNames = {}
-
 local locationNames = {}
 
 if AUTLevelUtil.TeleportLocations then
@@ -143,6 +132,5 @@ SaveManager:SetFolder("SunnyDaleHub/Config")
 InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
--- Startup behavior
-Window:SelectTab(2) -- Auto-Level default
+Window:SelectTab(1) 
 SaveManager:LoadAutoloadConfig()
