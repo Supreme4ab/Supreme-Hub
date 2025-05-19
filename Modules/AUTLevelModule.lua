@@ -3,6 +3,8 @@ local Players = CommonUtil.GetService("Players")
 
 local AUTLevelUtil = {}
 
+-- Config
+
 AUTLevelUtil.AllowedAbilities = {
 	"ABILITY_8881", "ABILITY_10019", "ABILITY_21", "ABILITY_10", "ABILITY_14"
 }
@@ -15,6 +17,8 @@ AUTLevelUtil.IsFarming = false
 AUTLevelUtil.IsMonitoring = false
 
 local farmThread, levelWatcherThread
+
+-- Useful funcs
 
 local function GetAbilityObject()
 	local data = Players.LocalPlayer:FindFirstChild("Data")
@@ -66,6 +70,8 @@ function AUTLevelUtil.BuildSellTable(allowed, shardsPerAbility)
 
 	return sellTable
 end
+
+-- Main LVL Farm Loop
 
 function AUTLevelUtil.RunFarmLoop()
 	if farmThread and coroutine.status(farmThread) ~= "dead" then return end
