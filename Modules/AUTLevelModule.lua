@@ -132,6 +132,8 @@ function AUTLevelUtil.RunLevelWatcher(onAscend, onMax)
 	levelWatcherThread = task.spawn(function()
 		while AUTLevelUtil.IsMonitoring do
 			local level = AUTLevelUtil.GetCurrentLevel()
+			print("Watcher running... Current Level:", level)
+
 			if not level then task.wait(1) continue end
 
 			if level ~= lastLevel and level <= maxLevel then
