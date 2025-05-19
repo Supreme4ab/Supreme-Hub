@@ -44,8 +44,8 @@ local farmThread, levelWatcherThread
 
 --Useful Funcs
 function AUTLevelUtil.SetShardRarity(rarity)
-	if ShardRarities[rarity] then
-		AUTLevelUtil.AllowedAbilities = ShardRarities[rarity]
+	if AUTLevelUtil.ShardRarities and AUTLevelUtil.ShardRarities[rarity] then
+		AUTLevelUtil.AllowedAbilities = AUTLevelUtil.ShardRarities[rarity]
 	end
 end
 
