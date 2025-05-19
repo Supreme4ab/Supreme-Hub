@@ -1,21 +1,18 @@
-local CommonUtil = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"
-))()
+local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
 local Players = CommonUtil.GetService("Players")
-
 local AUTLevelUtil = {}
 
 -- Teleport locations
 AUTLevelUtil.TeleportLocations = {
-  Alabasta          = Vector3.new(2085.529, 945.397, -2417.796),
-  Beach             = Vector3.new(607.062, 917.219, -1989.912),
+  ["Alabasta"]          = Vector3.new(2085.529, 945.397, -2417.796),
+  ["Beach"]             = Vector3.new(607.062, 917.219, -1989.912),
   ["Boss Spawn Room"]  = Vector3.new(19153.26, 910.548, 118.567),
   ["Central Wilds"]    = Vector3.new(2528.788, 989.488, -544.948),
   ["Desert Approach"]  = Vector3.new(1983.827, 924.261, -1137.514),
   ["Diavolo Spawn"]    = Vector3.new(1011.125, 934.362, 2888.195),
   ["Floating Village"] = Vector3.new(1222.878, 1015.637, -281.11),
   ["Football Field"]   = Vector3.new(1980.397, 973.423, -356.92),
-  Goku               = Vector3.new(2544.647, 916.524, 1828.544),
+  ["Goku"]               = Vector3.new(2544.647, 916.524, 1828.544),
   ["Guardians Spawn Room"] = Vector3.new(3509.697, 937.592, -430.434),
   ["Gyro TA1"]        = Vector3.new(2070.348, 1074.851, -714.886),
   ["Gyro TA2"]        = Vector3.new(2272.279, 973.616, 685.383),
@@ -26,10 +23,10 @@ AUTLevelUtil.TeleportLocations = {
   ["OG Sakuya Room"]  = Vector3.new(1967.306, 55.113, -1112.305),
   ["Orange Town"]     = Vector3.new(-2900.586, 918.631, 15166.34),
   ["Park Center"]     = Vector3.new(2075.826, 973.99, 280.726),
-  Port               = Vector3.new(2120.274, 921.774, 937.453),
-  Skaidev            = Vector3.new(2005.01, 930.397, -2477.821),
+  ["Port"]               = Vector3.new(2120.274, 921.774, 937.453),
+  ["Skaidev"]            = Vector3.new(2005.01, 930.397, -2477.821),
   ["Shibuya District"] = Vector3.new(-63.721, 4.6, -9939.011),
-  Subway             = Vector3.new(-16788.955, 7.0, -5982.729),
+  ["Subway"]             = Vector3.new(-16788.955, 7.0, -5982.729),
   ["Syrup Spawn"]     = Vector3.new(10015.269, -48.41, 30133.928),
 }
 
