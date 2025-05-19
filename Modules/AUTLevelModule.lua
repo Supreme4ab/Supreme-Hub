@@ -1,5 +1,6 @@
 local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
-local Players    = CommonUtil.GetService("Players")
+local Players = CommonUtil.GetService("Players")
+
 local AUTLevelUtil = {}
 
 -- Teleport locations
@@ -40,28 +41,39 @@ AUTLevelUtil.ShardRarities = {
   Mythic    = {"ABILITY_911","ABILITY_42"},
 }
 
+-- Config
 AUTLevelUtil.AllowedAbilities = AUTLevelUtil.ShardRarities.Common
 AUTLevelUtil.ShardsPerAbility = 5
 AUTLevelUtil.FarmInterval   = 0.1
+local maxLevel               = 200
 
-local maxLevel = 200
+-- States
 local lastLevel
 local farmThread, levelWatcherThread
 
-AUTLevelUtil.IsFarming    = false
-AUTLevelUtil.IsMonitoring = false
+AUTLevelUtil.IsFarming       = false
+AUTLevelUtil.IsMonitoring    = false
+AUTLevelUtil.AutoAscend      = false
 
+-- Remotes
+local RollBanner    = CommonUtil.GetKnitRemote("ShopService",  "RF", "RollBanner")
+local ConsumeShards = CommonUtil.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP")
+local AscendRemote  = CommonUtil.GetKnitRemote("LevelService", "RF", "AscendAbility")
+
+-- Functions
 function AUTLevelUtil.SetShardRarity(rarities)
   local newList = {}
   for _, rarity in ipairs(rarities) do
     local list = AUTLevelUtil.ShardRarities[rarity]
     if list then
-      for _, abilityId in ipairs(list) do
-        table.insert(newList, abilityId)
-      end
+      for _, id in ipairs(list) do table.insert(newList, id) end
     end
   end
   AUTLevelUtil.AllowedAbilities = newList
+end
+
+function AUTLevelUtil.SetAutoAscend(enabled)
+  AUTLevelUtil.AutoAscend = enabled and true or false
 end
 
 local function GetAbilityObject()
@@ -78,10 +90,8 @@ function AUTLevelUtil.BuildSellTable(allowed, shardsPerAbility)
   local allowedAbilities = allowed or AUTLevelUtil.AllowedAbilities
   local maxPerAbility    = math.clamp(shardsPerAbility or AUTLevelUtil.ShardsPerAbility, 1, 15)
   local sellTable = {}
-
   local gui = Players.LocalPlayer:FindFirstChild("PlayerGui")
   if not gui then return sellTable end
-
   local shardFrame = gui:FindFirstChild("UI")
       and gui.UI:FindFirstChild("Menus")
       and gui.UI.Menus:FindFirstChild("Black Market")
@@ -89,43 +99,23 @@ function AUTLevelUtil.BuildSellTable(allowed, shardsPerAbility)
       and gui.UI.Menus["Black Market"].Frame:FindFirstChild("ShardConvert")
       and gui.UI.Menus["Black Market"].Frame.ShardConvert:FindFirstChild("Shards")
   if not shardFrame then return sellTable end
-
-  for _, abilityId in ipairs(allowedAbilities) do
-    local frame  = shardFrame:FindFirstChild(abilityId)
-    local amount = frame
-        and frame:FindFirstChild("Button")
-        and tonumber(frame.Button:FindFirstChild("Amount") and frame.Button.Amount.Text)
-    if amount and amount > 0 then
-      sellTable[abilityId] = math.clamp(amount, 1, maxPerAbility)
+  for _, id in ipairs(allowedAbilities) do
+    local frame = shardFrame:FindFirstChild(id)
+    local amt = frame and frame.Button and tonumber(frame.Button.Amount.Text)
+    if amt and amt > 0 then
+      sellTable[id] = math.clamp(amt, 1, maxPerAbility)
     end
   end
-
   return sellTable
 end
 
 function AUTLevelUtil.RunFarmLoop()
   if farmThread and coroutine.status(farmThread) ~= "dead" then return end
-
-  local RollBanner    = CommonUtil.GetKnitRemote("ShopService",  "RF", "RollBanner")
-  local ConsumeShards = CommonUtil.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP")
-
   farmThread = task.spawn(function()
     while AUTLevelUtil.IsFarming do
-      pcall(function()
-        if RollBanner then
-          RollBanner:InvokeServer(1, "UShards", 10)
-        end
-      end)
-
+      pcall(function() if RollBanner then RollBanner:InvokeServer(1, "UShards", 10) end end)
       local sellTable = AUTLevelUtil.BuildSellTable()
-      if next(sellTable) then
-        pcall(function()
-          if ConsumeShards then
-            ConsumeShards:InvokeServer(sellTable)
-          end
-        end)
-      end
-
+      if next(sellTable) then pcall(function() if ConsumeShards then ConsumeShards:InvokeServer(sellTable) end end) end
       task.wait(AUTLevelUtil.FarmInterval)
     end
     farmThread = nil
@@ -134,31 +124,18 @@ end
 
 function AUTLevelUtil.RunLevelWatcher(onAscend, onMax)
   if levelWatcherThread and coroutine.status(levelWatcherThread) ~= "dead" then return end
-
   levelWatcherThread = task.spawn(function()
     while AUTLevelUtil.IsMonitoring do
       local level = AUTLevelUtil.GetCurrentLevel()
-      if not level then
-        task.wait(1)
-        continue
-      end
-
-      if level ~= lastLevel and level <= maxLevel then
-        lastLevel = level
-        if onAscend then onAscend(level) end
-      end
-
+      if not level then task.wait(1) continue end
+      if level ~= lastLevel and level <= maxLevel then lastLevel = level if onAscend then onAscend(level) end end
       if level >= maxLevel then
-        if AUTLevelUtil.IsFarming then
-          AUTLevelUtil.IsFarming = false
-          if onMax then onMax(level) end
-        end
+        if AUTLevelUtil.IsFarming then AUTLevelUtil.IsFarming = false end
+        if onMax then onMax(level) end
+        if AUTLevelUtil.AutoAscend and AscendRemote then pcall(function() AscendRemote:InvokeServer(1800) end) end
         task.wait(5)
       else
-        if not AUTLevelUtil.IsFarming then
-          AUTLevelUtil.IsFarming = true
-          AUTLevelUtil.RunFarmLoop()
-        end
+        if not AUTLevelUtil.IsFarming then AUTLevelUtil.IsFarming = true AUTLevelUtil.RunFarmLoop() end
         task.wait(1)
       end
     end
