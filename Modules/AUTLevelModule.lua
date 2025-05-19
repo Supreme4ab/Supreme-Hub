@@ -3,22 +3,51 @@ local Players = CommonUtil.GetService("Players")
 
 local AUTLevelUtil = {}
 
--- Config
-
-AUTLevelUtil.AllowedAbilities = {
-	"ABILITY_8881", "ABILITY_10019", "ABILITY_21", "ABILITY_10", "ABILITY_14"
+--Config
+local ShardRarities = {
+	Common = {
+		"ABILITY_14", "ABILITY_1", "ABILITY_10", "ABILITY_10019", "ABILITY_21", "ABILITY_8881"
+	},
+	Uncommon = {
+		"ABILITY_33", "ABILITY_7", "ABILITY_7955", "ABILITY_119", "ABILITY_22"
+	},
+	Rare = {
+		"ABILITY_6", "ABILITY_9", "ABILITY_50923", "ABILITY_350", "ABILITY_2000", "ABILITY_300000",
+		"ABILITY_4", "ABILITY_2", "ABILITY_732"
+	},
+	Epic = {
+		"ABILITY_77", "ABILITY_420", "ABILITY_80086", "ABILITY_73", "ABILITY_2555",
+		"ABILITY_41321", "ABILITY_456073", "ABILITY_140404", "ABILITY_24", "ABILITY_70",
+		"ABILITY_19", "ABILITY_421", "ABILITY_100000", "ABILITY_1300"
+	},
+	Legendary = {
+		"ABILITY_5", "ABILITY_666", "ABILITY_20", "ABILITY_9111", "ABILITY_684", "ABILITY_27",
+		"ABILITY_3701", "ABILITY_23", "ABILITY_2319", "ABILITY_701", "ABILITY_26", "ABILITY_12",
+		"ABILITY_2421", "ABILITY_658", "ABILITY_911111", "ABILITY_12789", "ABILITY_69"
+	},
+	Mythic = {
+		"ABILITY_911", "ABILITY_42"
+	}
 }
+
+AUTLevelUtil.ShardRarities = ShardRarities
+AUTLevelUtil.AllowedAbilities = ShardRarities.Common
 AUTLevelUtil.ShardsPerAbility = 5
 AUTLevelUtil.FarmInterval = 0.1
+
 local maxLevel = 200
 local lastLevel = nil
-
 AUTLevelUtil.IsFarming = false
 AUTLevelUtil.IsMonitoring = false
 
 local farmThread, levelWatcherThread
 
--- Useful funcs
+--Useful Funcs
+function AUTLevelUtil.SetShardRarity(rarity)
+	if ShardRarities[rarity] then
+		AUTLevelUtil.AllowedAbilities = ShardRarities[rarity]
+	end
+end
 
 local function GetAbilityObject()
 	local data = Players.LocalPlayer:FindFirstChild("Data")
@@ -30,34 +59,21 @@ function AUTLevelUtil.GetCurrentLevel()
 	return ability and ability:GetAttribute("AbilityLevel") or nil
 end
 
-function AUTLevelUtil.GetAbilityName()
-	local ability = GetAbilityObject()
-	return ability and ability:GetAttribute("AbilityName") or nil
-end
-
-function AUTLevelUtil.GetAscensionRank()
-	local ability = GetAbilityObject()
-	return ability and ability:GetAttribute("AscensionRank") or nil
-end
-
-local function GetShardGUIFrame()
-	local gui = Players.LocalPlayer:FindFirstChild("PlayerGui")
-	if not gui then return nil end
-
-	return gui:FindFirstChild("UI")
-		and gui.UI:FindFirstChild("Menus")
-		and gui.UI.Menus:FindFirstChild("Black Market")
-		and gui.UI.Menus["Black Market"]:FindFirstChild("Frame")
-		and gui.UI.Menus["Black Market"].Frame:FindFirstChild("ShardConvert")
-		and gui.UI.Menus["Black Market"].Frame.ShardConvert:FindFirstChild("Shards")
-end
-
 function AUTLevelUtil.BuildSellTable(allowed, shardsPerAbility)
 	local allowedAbilities = allowed or AUTLevelUtil.AllowedAbilities
 	local maxPerAbility = math.clamp(shardsPerAbility or AUTLevelUtil.ShardsPerAbility, 1, 15)
 	local sellTable = {}
 
-	local shardFrame = GetShardGUIFrame()
+	local gui = Players.LocalPlayer:FindFirstChild("PlayerGui")
+	if not gui then return sellTable end
+
+	local shardFrame = gui:FindFirstChild("UI")
+	shardFrame = shardFrame and shardFrame:FindFirstChild("Menus")
+	shardFrame = shardFrame and shardFrame:FindFirstChild("Black Market")
+	shardFrame = shardFrame and shardFrame:FindFirstChild("Frame")
+	shardFrame = shardFrame and shardFrame:FindFirstChild("ShardConvert")
+	shardFrame = shardFrame and shardFrame:FindFirstChild("Shards")
+
 	if not shardFrame then return sellTable end
 
 	for _, abilityId in ipairs(allowedAbilities) do
@@ -70,8 +86,6 @@ function AUTLevelUtil.BuildSellTable(allowed, shardsPerAbility)
 
 	return sellTable
 end
-
--- Main LVL Farm Loop
 
 function AUTLevelUtil.RunFarmLoop()
 	if farmThread and coroutine.status(farmThread) ~= "dead" then return end
@@ -101,6 +115,8 @@ function AUTLevelUtil.RunFarmLoop()
 		farmThread = nil
 	end)
 end
+
+--Autofarm
 
 function AUTLevelUtil.RunLevelWatcher(onAscend, onMax)
 	if levelWatcherThread and coroutine.status(levelWatcherThread) ~= "dead" then return end
