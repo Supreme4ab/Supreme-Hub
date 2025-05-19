@@ -32,8 +32,20 @@ local function GetAbilityObject()
 end
 
 function AUTLevelUtil.GetCurrentLevel()
-	local ability = GetAbilityObject()
-	return ability and ability:GetAttribute("AbilityLevel") or nil
+    local gui = Players.LocalPlayer:FindFirstChild("PlayerGui")
+    if not gui then return nil end
+
+    local label = gui:FindFirstChild("UI")
+    label = label and label:FindFirstChild("Gameplay")
+    label = label and label:FindFirstChild("Character")
+    label = label and label:FindFirstChild("Info")
+    label = label and label:FindFirstChild("AbilityInfo")
+
+    if label and label:IsA("TextLabel") then
+        local match = string.match(label.Text, "LVL%s+(%d+)")
+        return tonumber(match)
+    end
+    return nil
 end
 
 function AUTLevelUtil.GetAbilityName()
