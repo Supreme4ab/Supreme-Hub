@@ -3,7 +3,7 @@ local Players = CommonUtil.GetService("Players")
 
 local AUTLevelUtil = {}
 
---Constants/Config
+-- Constants
 AUTLevelUtil.AllowedAbilities = {
     "ABILITY_8881", "ABILITY_10019", "ABILITY_21", "ABILITY_10", "ABILITY_14"
 }
@@ -12,165 +12,173 @@ AUTLevelUtil.FarmInterval = 0.1
 local maxLevel = 200
 local lastLevel = nil
 
---States
+-- Runtime
 AUTLevelUtil.IsFarming = false
 AUTLevelUtil.IsMonitoring = false
+AUTLevelUtil.Debug = true
+
 local farmThread, levelWatcherThread
 
---Debug
-AUTLevelUtil.Debug = false
-function AUTLevelUtil.Log(msg)
-	if AUTLevelUtil.Debug then
-		CommonUtil.Log("[AUTLevel]", msg)
-	end
+-- Logging
+function AUTLevelUtil.Log(...)
+    if AUTLevelUtil.Debug then
+        print("[AUTLevelUtil]", ...)
+    end
 end
 
---Reusable Attribute Getter
+-- Attribute getter
 local function GetAbilityObject()
-	local data = Players.LocalPlayer:FindFirstChild("Data")
-	return data and data:FindFirstChild("Ability")
+    local data = Players.LocalPlayer:FindFirstChild("Data")
+    return data and data:FindFirstChild("Ability")
 end
 
 function AUTLevelUtil.GetCurrentLevel()
-    local gui = Players.LocalPlayer:FindFirstChild("PlayerGui")
-    if not gui then return nil end
-
-    local label = gui:FindFirstChild("UI")
-    label = label and label:FindFirstChild("Gameplay")
-    label = label and label:FindFirstChild("Character")
-    label = label and label:FindFirstChild("Info")
-    label = label and label:FindFirstChild("AbilityInfo")
-
-    if label and label:IsA("TextLabel") then
-        local match = string.match(label.Text, "LVL%s+(%d+)")
-        return tonumber(match)
+    local ability = GetAbilityObject()
+    if not ability then
+        AUTLevelUtil.Log("Ability instance not found")
+        return nil
     end
-    return nil
+    local level = ability:GetAttribute("AbilityLevel")
+    if not level then
+        AUTLevelUtil.Log("AbilityLevel attribute missing or nil")
+    end
+    return level
 end
 
 function AUTLevelUtil.GetAbilityName()
-	local ability = GetAbilityObject()
-	return ability and ability:GetAttribute("AbilityName") or nil
+    local ability = GetAbilityObject()
+    return ability and ability:GetAttribute("AbilityName") or nil
 end
 
 function AUTLevelUtil.GetAscensionRank()
-	local ability = GetAbilityObject()
-	return ability and ability:GetAttribute("AscensionRank") or nil
+    local ability = GetAbilityObject()
+    return ability and ability:GetAttribute("AscensionRank") or nil
 end
 
---Reusable GUI Shard Frame Lookup
+-- GUI lookup for shard convert menu
 local function GetShardGUIFrame()
-	local gui = Players.LocalPlayer:FindFirstChild("PlayerGui")
-	if not gui then return nil end
+    local gui = Players.LocalPlayer:FindFirstChild("PlayerGui")
+    if not gui then return nil end
 
-	return gui:FindFirstChild("UI")
-		and gui.UI:FindFirstChild("Menus")
-		and gui.UI.Menus:FindFirstChild("Black Market")
-		and gui.UI.Menus["Black Market"]:FindFirstChild("Frame")
-		and gui.UI.Menus["Black Market"].Frame:FindFirstChild("ShardConvert")
-		and gui.UI.Menus["Black Market"].Frame.ShardConvert:FindFirstChild("Shards")
+    return gui:FindFirstChild("UI")
+        and gui.UI:FindFirstChild("Menus")
+        and gui.UI.Menus:FindFirstChild("Black Market")
+        and gui.UI.Menus["Black Market"]:FindFirstChild("Frame")
+        and gui.UI.Menus["Black Market"].Frame:FindFirstChild("ShardConvert")
+        and gui.UI.Menus["Black Market"].Frame.ShardConvert:FindFirstChild("Shards")
 end
 
---Builds sell table from allowed abilities
 function AUTLevelUtil.BuildSellTable(allowed, shardsPerAbility)
-	local allowedAbilities = allowed or AUTLevelUtil.AllowedAbilities
-	local maxPerAbility = math.clamp(shardsPerAbility or AUTLevelUtil.ShardsPerAbility, 1, 15)
-	local sellTable = {}
+    local allowedAbilities = allowed or AUTLevelUtil.AllowedAbilities
+    local maxPerAbility = math.clamp(shardsPerAbility or AUTLevelUtil.ShardsPerAbility, 1, 15)
+    local sellTable = {}
 
-	local shardFrame = GetShardGUIFrame()
-	if not shardFrame then return sellTable end
+    local shardFrame = GetShardGUIFrame()
+    if not shardFrame then
+        AUTLevelUtil.Log("Shard frame not found")
+        return sellTable
+    end
 
-	for _, abilityId in ipairs(allowedAbilities) do
-		local frame = shardFrame:FindFirstChild(abilityId)
-		local amount = frame and frame:FindFirstChild("Button") and tonumber(frame.Button:FindFirstChild("Amount") and frame.Button.Amount.Text)
-		if amount and amount > 0 then
-			sellTable[abilityId] = math.clamp(amount, 1, maxPerAbility)
-		end
-	end
+    for _, abilityId in ipairs(allowedAbilities) do
+        local frame = shardFrame:FindFirstChild(abilityId)
+        local amount = frame and frame:FindFirstChild("Button") and tonumber(frame.Button:FindFirstChild("Amount") and frame.Button.Amount.Text)
+        if amount and amount > 0 then
+            sellTable[abilityId] = math.clamp(amount, 1, maxPerAbility)
+        end
+    end
 
-	return sellTable
+    return sellTable
 end
 
---Auto-farming loop
 function AUTLevelUtil.RunFarmLoop()
-	if farmThread and coroutine.status(farmThread) ~= "dead" then return end
+    if farmThread and coroutine.status(farmThread) ~= "dead" then return end
 
-	local RollBanner = CommonUtil.GetKnitRemote("ShopService", "RF", "RollBanner")
-	local ConsumeShards = CommonUtil.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP")
+    local RollBanner = CommonUtil.GetKnitRemote("ShopService", "RF", "RollBanner")
+    local ConsumeShards = CommonUtil.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP")
 
-	farmThread = task.spawn(function()
-		while AUTLevelUtil.IsFarming do
-			pcall(function()
-				if RollBanner then
-					RollBanner:InvokeServer(1, "UShards", 10)
-				else
-					AUTLevelUtil.Log("RollBanner remote missing")
-				end
-			end)
+    AUTLevelUtil.Log("RunFarmLoop started")
+    AUTLevelUtil.Log("RollBanner remote:", RollBanner)
+    AUTLevelUtil.Log("ConsumeShards remote:", ConsumeShards)
 
-			local sellTable = AUTLevelUtil.BuildSellTable()
-			if next(sellTable) then
-				pcall(function()
-					if ConsumeShards then
-						ConsumeShards:InvokeServer(sellTable)
-					else
-						AUTLevelUtil.Log("ConsumeShards remote missing")
-					end
-				end)
-			end
+    farmThread = task.spawn(function()
+        while AUTLevelUtil.IsFarming do
+            pcall(function()
+                if RollBanner then
+                    RollBanner:InvokeServer(1, "UShards", 10)
+                    AUTLevelUtil.Log("Invoked RollBanner")
+                else
+                    AUTLevelUtil.Log("RollBanner remote missing")
+                end
+            end)
 
-			task.wait(AUTLevelUtil.FarmInterval)
-		end
-		farmThread = nil
-	end)
+            local sellTable = AUTLevelUtil.BuildSellTable()
+            if next(sellTable) then
+                pcall(function()
+                    if ConsumeShards then
+                        ConsumeShards:InvokeServer(sellTable)
+                        AUTLevelUtil.Log("Consumed Shards")
+                    else
+                        AUTLevelUtil.Log("ConsumeShards remote missing")
+                    end
+                end)
+            else
+                AUTLevelUtil.Log("No shards to sell")
+            end
+
+            task.wait(AUTLevelUtil.FarmInterval)
+        end
+        AUTLevelUtil.Log("Farm loop ended")
+        farmThread = nil
+    end)
 end
 
---Watches level and toggles farm
 function AUTLevelUtil.RunLevelWatcher(onAscend, onMax)
-	if levelWatcherThread and coroutine.status(levelWatcherThread) ~= "dead" then return end
+    if levelWatcherThread and coroutine.status(levelWatcherThread) ~= "dead" then return end
 
-	levelWatcherThread = task.spawn(function()
-		while AUTLevelUtil.IsMonitoring do
-			local level = AUTLevelUtil.GetCurrentLevel()
-			print("Watcher running... Current Level:", level)
+    AUTLevelUtil.Log("Level watcher started")
 
-			if not level then task.wait(1) continue end
+    levelWatcherThread = task.spawn(function()
+        while AUTLevelUtil.IsMonitoring do
+            local level = AUTLevelUtil.GetCurrentLevel()
+            AUTLevelUtil.Log("Current level:", level)
 
-			if level ~= lastLevel and level <= maxLevel then
-				lastLevel = level
-				AUTLevelUtil.Log("Level changed: " .. level)
-			end
+            if not level then task.wait(1) continue end
 
-			if level >= maxLevel then
-				if AUTLevelUtil.IsFarming then
-					AUTLevelUtil.IsFarming = false
-					if onMax then onMax() end
-					AUTLevelUtil.Log("Max level reached.")
-				end
-				task.wait(5)
-			elseif level < maxLevel then
-				if not AUTLevelUtil.IsFarming then
-					AUTLevelUtil.IsFarming = true
-					if onAscend then onAscend() end
-					AUTLevelUtil.RunFarmLoop()
-					AUTLevelUtil.Log("Started farming...")
-				end
-				task.wait(1)
-			else
-				task.wait(1)
-			end
-		end
-		levelWatcherThread = nil
-	end)
+            if level ~= lastLevel and level <= maxLevel then
+                lastLevel = level
+                AUTLevelUtil.Log("Level changed to:", level)
+            end
+
+            if level >= maxLevel then
+                if AUTLevelUtil.IsFarming then
+                    AUTLevelUtil.IsFarming = false
+                    if onMax then onMax() end
+                    AUTLevelUtil.Log("Reached max level. Stopping farm.")
+                end
+                task.wait(5)
+            elseif level < maxLevel then
+                if not AUTLevelUtil.IsFarming then
+                    AUTLevelUtil.IsFarming = true
+                    if onAscend then onAscend() end
+                    AUTLevelUtil.Log("Starting farm loop...")
+                    AUTLevelUtil.RunFarmLoop()
+                end
+                task.wait(1)
+            else
+                task.wait(1)
+            end
+        end
+        AUTLevelUtil.Log("Level watcher stopped")
+        levelWatcherThread = nil
+    end)
 end
 
---reset runtime flags + threads
 function AUTLevelUtil.Reset()
-	AUTLevelUtil.IsFarming = false
-	AUTLevelUtil.IsMonitoring = false
-	farmThread = nil
-	levelWatcherThread = nil
-	AUTLevelUtil.Log("All systems reset.")
+    AUTLevelUtil.IsFarming = false
+    AUTLevelUtil.IsMonitoring = false
+    AUTLevelUtil.Log("Resetting state")
+    farmThread = nil
+    levelWatcherThread = nil
 end
 
 return AUTLevelUtil
