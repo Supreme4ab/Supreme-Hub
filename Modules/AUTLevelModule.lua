@@ -49,8 +49,9 @@ local maxLevel               = 200
 
 -- States
 local lastLevel
-local farmThread, levelWatcherThread
+local farmThread, levelWatcherThread, fogWatcherThread
 
+AUTLevelUtil.WatchingFog     = false
 AUTLevelUtil.IsFarming       = false
 AUTLevelUtil.IsMonitoring    = false
 AUTLevelUtil.AutoAscend      = false
@@ -150,13 +151,24 @@ function AUTLevelUtil.Reset()
 end
 
 
-function AUTLevelUtil.RemoveDesertFog()
-    local lighting = game:GetService("Lighting")
-    for _, objName in pairs({"DPAtmosphere", "DPBlur", "DPColorCorrection"}) do
-        local effect = lighting:FindFirstChild(objName)
-        if effect then
-            effect:Destroy()
-        end
+function AUTLevelUtil.SetFogAutoRemove(state)
+    WatchingFog = state
+    if state and not AUTLevelUtil.FogWatcherThread then
+        AUTLevelUtil.FogWatcherThread = task.spawn(function()
+            while watchingFog do
+                local lighting = game:GetService("Lighting")
+                for _, objName in pairs({"DPAtmosphere", "DPBlur", "DPColorCorrection"}) do
+                    local effect = lighting:FindFirstChild(objName)
+                    if effect then
+                        pcall(function() effect:Destroy() end)
+                    end
+                end
+                task.wait(1)
+            end
+            AUTLevelUtil.FogWatcherThread = nil
+        end)
+    elseif not state and AUTLevelUtil.FogWatcherThread then
+        WatchingFog = false
     end
 end
 
