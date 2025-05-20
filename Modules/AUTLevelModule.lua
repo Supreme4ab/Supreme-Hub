@@ -152,10 +152,10 @@ end
 
 
 function AUTLevelUtil.SetFogAutoRemove(state)
-    WatchingFog = state
+    AUTLevelUtil.WatchingFog = state
     if state and not AUTLevelUtil.FogWatcherThread then
         AUTLevelUtil.FogWatcherThread = task.spawn(function()
-            while watchingFog do
+            while AUTLevelUtil.WatchingFog do
                 local lighting = game:GetService("Lighting")
                 for _, objName in pairs({"DPAtmosphere", "DPBlur", "DPColorCorrection"}) do
                     local effect = lighting:FindFirstChild(objName)
@@ -168,7 +168,7 @@ function AUTLevelUtil.SetFogAutoRemove(state)
             AUTLevelUtil.FogWatcherThread = nil
         end)
     elseif not state and AUTLevelUtil.FogWatcherThread then
-        WatchingFog = false
+        AUTLevelUtil.WatchingFog = false
     end
 end
 
