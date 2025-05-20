@@ -149,4 +149,38 @@ function AUTLevelUtil.Reset()
   farmThread, levelWatcherThread = nil, nil
 end
 
+
+function AUTLevelUtil.RemoveDesertFog()
+    local lighting = game:GetService("Lighting")
+    for _, objName in pairs({"DPAtmosphere", "DPBlur", "DPColorCorrection"}) do
+        local effect = lighting:FindFirstChild(objName)
+        if effect then
+            effect:Destroy()
+        end
+    end
+end
+
+function AUTLevelUtil.RemoveVFX()
+    local function removeDescendants(instance)
+        for _, descendant in pairs(instance:GetDescendants()) do
+            if descendant:IsA("ParticleEmitter") or
+               descendant:IsA("Trail") or
+               descendant:IsA("Beam") or
+               descendant:IsA("Explosion") or
+               descendant:IsA("Fire") or
+               descendant:IsA("Smoke") or
+               descendant:IsA("Sparkles") then
+                pcall(function() descendant:Destroy() end)
+            end
+        end
+    end
+
+    removeDescendants(game:GetService("Workspace"))
+
+    local char = Players.LocalPlayer.Character
+    if char then
+        removeDescendants(char)
+    end
+end
+
 return AUTLevelUtil
