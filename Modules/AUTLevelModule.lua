@@ -34,12 +34,12 @@ AUTLevelUtil.TeleportLocations = {
 
 -- Shard rarities
 AUTLevelUtil.ShardRarities = {
-  Common = { ... }, -- omitted for brevity, keep your same lists
-  Uncommon = { ... },
-  Rare = { ... },
-  Epic = { ... },
-  Legendary = { ... },
-  Mythic = { ... },
+  Common    = {"ABILITY_14","ABILITY_1","ABILITY_10","ABILITY_10019","ABILITY_21","ABILITY_8881"},
+  Uncommon  = {"ABILITY_33","ABILITY_7","ABILITY_7955","ABILITY_119","ABILITY_22"},
+  Rare      = {"ABILITY_6","ABILITY_9","ABILITY_50923","ABILITY_350","ABILITY_2000","ABILITY_300000","ABILITY_4","ABILITY_2","ABILITY_732"},
+  Epic      = {"ABILITY_77","ABILITY_420","ABILITY_80086","ABILITY_73","ABILITY_2555","ABILITY_41321","ABILITY_456073","ABILITY_140404","ABILITY_24","ABILITY_70","ABILITY_19","ABILITY_421","ABILITY_100000","ABILITY_1300"},
+  Legendary = {"ABILITY_5","ABILITY_666","ABILITY_20","ABILITY_9111","ABILITY_684","ABILITY_27","ABILITY_3701","ABILITY_23","ABILITY_2319","ABILITY_701","ABILITY_26","ABILITY_12","ABILITY_2421","ABILITY_658","ABILITY_911111","ABILITY_12789","ABILITY_69"},
+  Mythic    = {"ABILITY_911","ABILITY_42"},
 }
 
 AUTLevelUtil.AllowedAbilities = AUTLevelUtil.ShardRarities.Common
