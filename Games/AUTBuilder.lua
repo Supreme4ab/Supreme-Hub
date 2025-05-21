@@ -6,8 +6,8 @@ getgenv().SunnyDaleHubLoaded = true
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager      = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
-local CommonUtil   = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/refs/heads/main/Modules/CommonModule.lua"))()
-local AUTLevelUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/SunniHubTest/main/Modules/AUTLevelModule.lua"))()
+local CommonModule   = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/refs/heads/main/Modules/CommonModule.lua"))()
+local AUTMainModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/SunniHubTest/main/Modules/AUTLevelModule.lua"))()
 
 local Window = Fluent:CreateWindow{
   Title       = "SunnyDale | AUT Hub | By Supreme",
@@ -45,11 +45,11 @@ local Toggle = Tabs.AutoLevel:AddToggle("AutoFarmToggle", {
 })
 Toggle:OnChanged(function(state)
   if state then
-    AUTLevelUtil.IsMonitoring = true
-    AUTLevelUtil.RunLevelWatcher()
+    AUTMainModule.IsMonitoring = true
+    AUTMainModule.RunLevelWatcher()
     Fluent:Notify{Title = "Auto-Leveling", Content = "Farming started."}
   else
-    AUTLevelUtil.Reset()
+    AUTMainModule.Reset()
     Fluent:Notify{Title = "Auto-Leveling", Content = "Farming stopped."}
   end
 end)
@@ -61,7 +61,7 @@ Tabs.AutoLevel:AddSlider("FarmDelaySlider", {
   Min         = 0.05,
   Max         = 1,
   Rounding    = 2,
-  Callback    = function(val) AUTLevelUtil.FarmInterval = val end
+  Callback    = function(val) AUTMainModule.FarmInterval = val end
 }):SetValue(0.1)
 
 Tabs.AutoLevel:AddDropdown("ShardRarity", {
@@ -70,13 +70,13 @@ Tabs.AutoLevel:AddDropdown("ShardRarity", {
   Values      = {"Common","Uncommon","Rare","Epic","Legendary","Mythic"},
   Default     = {"Common"},
   Multi       = true,
-  Callback    = function(rarities) AUTLevelUtil.SetShardRarity(rarities) end
+  Callback    = function(rarities) AUTMainModule.SetShardRarity(rarities) end
 }):SetValue({"Common"})
 
 -- Teleports
 local selectedTeleport
 local locationNames = {}
-for name in pairs(AUTLevelUtil.TeleportLocations) do
+for name in pairs(AUTMainModule.TeleportLocations) do
   table.insert(locationNames, name)
 end
 table.sort(locationNames)
@@ -87,7 +87,7 @@ section:AddDropdown("TeleportLocation", {
   Description = "Select where to teleport",
   Values      = locationNames,
   Multi       = false,
-  Callback    = function(choice) selectedTeleport = AUTLevelUtil.TeleportLocations[choice] end
+  Callback    = function(choice) selectedTeleport = AUTMainModule.TeleportLocations[choice] end
 })
 
 section:AddButton{
@@ -99,7 +99,7 @@ section:AddButton{
       return
     end
     local success, err = pcall(function()
-      if not CommonUtil.Teleport(selectedTeleport) then
+      if not CommonModule.Teleport(selectedTeleport) then
         error("Teleport returned false")
       end
     end)
