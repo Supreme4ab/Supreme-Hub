@@ -17,10 +17,10 @@ end
 local Fluent = safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua")
 local SaveManager      = safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua")
 local InterfaceManager = safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua")
-local CommonModule   = safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Modules/CommonModule.lua")
-local AUTLevelModule = safeLoad("https://raw.githubusercontent.com/Supreme4ab/SunniHubTest/main/Modules/AUTLevelModule.lua")
+local CommonModule   = safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Main/Modules/CommonModule.lua")
+local AUTMainModule = safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Modules/AUTMainlModule.lua")
 
-if not Fluent or not SaveManager or not InterfaceManager or not CommonModule or not AUTLevelModule then
+if not Fluent or not SaveManager or not InterfaceManager or not CommonModule or not AUTMainModule then
     warn("One or more required modules failed to load. Aborting.")
     return
 end
@@ -62,11 +62,11 @@ local Toggle = Tabs.AutoLevel:AddToggle("AutoFarmToggle", {
 
 Toggle:OnChanged(function(state)
   if state then
-    AUTLevelModule.IsMonitoring = true
-    AUTLevelModule.RunLevelWatcher()
+    AUTMainModule.IsMonitoring = true
+    AUTMainModule.RunLevelWatcher()
     Fluent:Notify{Title = "Auto-Leveling", Content = "Farming started."}
   else
-    AUTLevelModule.Reset()
+    AUTMainModule.Reset()
     Fluent:Notify{Title = "Auto-Leveling", Content = "Farming stopped."}
   end
 end)
@@ -78,7 +78,7 @@ Tabs.AutoLevel:AddSlider("FarmDelaySlider", {
   Min         = 0.05,
   Max         = 1,
   Rounding    = 2,
-  Callback    = function(val) AUTLevelModule.FarmInterval = val end
+  Callback    = function(val) AUTMainModule.FarmInterval = val end
 }):SetValue(0.1)
 
 Tabs.AutoLevel:AddDropdown("ShardRarity", {
@@ -87,13 +87,13 @@ Tabs.AutoLevel:AddDropdown("ShardRarity", {
   Values      = {"Common","Uncommon","Rare","Epic","Legendary","Mythic"},
   Default     = {"Common"},
   Multi       = true,
-  Callback    = function(rarities) AUTLevelModule.SetShardRarity(rarities) end
+  Callback    = function(rarities) AUTMainModule.SetShardRarity(rarities) end
 }):SetValue({"Common"})
 
 -- Teleports
 local selectedTeleport
 local locationNames = {}
-for name in pairs(AUTLevelModule.TeleportLocations or {}) do
+for name in pairs(AUTMainModule.TeleportLocations or {}) do
   table.insert(locationNames, name)
 end
 table.sort(locationNames)
@@ -104,7 +104,7 @@ section:AddDropdown("TeleportLocation", {
   Description = "Select where to teleport",
   Values      = locationNames,
   Multi       = false,
-  Callback    = function(choice) selectedTeleport = AUTLevelModule.TeleportLocations[choice] end
+  Callback    = function(choice) selectedTeleport = AUTMainModule.TeleportLocations[choice] end
 })
 
 section:AddButton{
@@ -135,12 +135,12 @@ local autoAscToggle = standSection:AddToggle("AutoAscensionToggle", {
 })
 
 autoAscToggle:OnChanged(function(enabled)
-    AUTLevelModule.SetAutoAscend(enabled)
+    AUTMainModule.SetAutoAscend(enabled)
     if enabled then
-        AUTLevelModule.IsMonitoring = true
-        AUTLevelModule.RunLevelWatcher()
+        AUTMainModule.IsMonitoring = true
+        AUTMainModule.RunLevelWatcher()
     else
-        AUTLevelModule.Reset()
+        AUTMainModule.Reset()
     end
 end)
 
@@ -152,7 +152,7 @@ visualsSection:AddToggle("VFXRemoverToggle", {
     Default = false
 }):OnChanged(function(state)
     if state then
-        AUTLevelModule.RemoveVFX()
+        AUTMainModule.RemoveVFX()
     end
 end)
 
@@ -161,17 +161,17 @@ visualsSection:AddToggle("DesertFogRemoverToggle", {
     Description = "Disables fog and post-processing in the desert area.",
     Default = false
 }):OnChanged(function(state)
-    AUTLevelModule.SetFogAutoRemove(state)
+    AUTMainModule.SetFogAutoRemove(state)
     if state then
-        AUTLevelModule.RemoveDesertFog()
+        AUTMainModule.RemoveDesertFog()
     end
 end)
 
 -- Settings & Save
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetFolder("SunnyDaleHub")
-SaveManager:SetFolder("SunnyDaleHub/Config")
+InterfaceManager:SetFolder("SupremeHub")
+SaveManager:SetFolder("SupremeHub/Config")
 InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
