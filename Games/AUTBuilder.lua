@@ -3,11 +3,27 @@ if getgenv().SupremeHubLoaded then
 end
 getgenv().SupremeHubLoaded = true
 
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveManager      = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
-local CommonModule   = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/refs/heads/main/Modules/CommonModule.lua"))()
-local AUTLevelModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/SunniHubTest/main/Modules/AUTLevelModule.lua"))()
+local function safeLoad(url)
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        warn("Failed to load: " .. url)
+        return nil
+    end
+    return result
+end
+
+local Fluent = safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua")
+local SaveManager      = safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua")
+local InterfaceManager = safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua")
+local CommonModule   = safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Modules/CommonModule.lua")
+local AUTLevelModule = safeLoad("https://raw.githubusercontent.com/Supreme4ab/SunniHubTest/main/Modules/AUTLevelModule.lua")
+
+if not Fluent or not SaveManager or not InterfaceManager or not CommonModule or not AUTLevelModule then
+    warn("One or more required modules failed to load. Aborting.")
+    return
+end
 
 local Window = Fluent:CreateWindow{
   Title       = "Supreme Hub | AUT | By Supreme",
@@ -43,6 +59,7 @@ local Toggle = Tabs.AutoLevel:AddToggle("AutoFarmToggle", {
   Description = "Runs farm + XP logic in loop.",
   Default     = false
 })
+
 Toggle:OnChanged(function(state)
   if state then
     AUTLevelModule.IsMonitoring = true
@@ -76,7 +93,7 @@ Tabs.AutoLevel:AddDropdown("ShardRarity", {
 -- Teleports
 local selectedTeleport
 local locationNames = {}
-for name in pairs(AUTLevelModule.TeleportLocations) do
+for name in pairs(AUTLevelModule.TeleportLocations or {}) do
   table.insert(locationNames, name)
 end
 table.sort(locationNames)
@@ -117,7 +134,6 @@ local autoAscToggle = standSection:AddToggle("AutoAscensionToggle", {
     Default     = false,
 })
 
-
 autoAscToggle:OnChanged(function(enabled)
     AUTLevelModule.SetAutoAscend(enabled)
     if enabled then
@@ -153,11 +169,11 @@ end)
 
 -- Settings & Save
 InterfaceManager:SetLibrary(Fluent)
-SaveManager:   SetLibrary(Fluent)
+SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetFolder("SunnyDaleHub")
-SaveManager:   SetFolder("SunnyDaleHub/Config")
+SaveManager:SetFolder("SunnyDaleHub/Config")
 InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:   BuildConfigSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
 
 Window:SelectTab(2)
 SaveManager:LoadAutoloadConfig()
