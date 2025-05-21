@@ -1,6 +1,6 @@
-local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
-local Players = CommonUtil.GetService("Players")
-local TweenService = CommonUtil.GetService("TweenService")
+local CommonModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Main/Modules/CommonModule.lua"))()
+local Players = CommonModule.GetService("Players")
+local TweenService = CommonModule.GetService("TweenService")
 
 local AUTLevelUtil = {}
 
@@ -56,9 +56,9 @@ AUTLevelUtil.IsMonitoring = false
 AUTLevelUtil.AutoAscend = false
 
 -- Remote references
-local RollBanner = CommonUtil.GetKnitRemote("ShopService",  "RF", "RollBanner")
-local ConsumeShards = CommonUtil.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP")
-local AscendRemote = CommonUtil.GetKnitRemote("LevelService", "RF", "AscendAbility")
+local RollBanner = CommonModule.GetKnitRemote("ShopService",  "RF", "RollBanner")
+local ConsumeShards = CommonModule.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP")
+local AscendRemote = CommonModule.GetKnitRemote("LevelService", "RF", "AscendAbility")
 
 function AUTLevelUtil.SetShardRarity(rarities)
   local newList = {}
