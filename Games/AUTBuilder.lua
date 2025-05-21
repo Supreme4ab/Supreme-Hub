@@ -1,16 +1,16 @@
-if getgenv().SunnyDaleHubLoaded then
+if getgenv().SupremeHubLoaded then
     return
 end
-getgenv().SunnyDaleHubLoaded = true
+getgenv().SupremeHubLoaded = true
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager      = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 local CommonModule   = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/refs/heads/main/Modules/CommonModule.lua"))()
-local AUTMainModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/SunniHubTest/main/Modules/AUTLevelModule.lua"))()
+local AUTLevelModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/SunniHubTest/main/Modules/AUTLevelModule.lua"))()
 
 local Window = Fluent:CreateWindow{
-  Title       = "SunnyDale | AUT Hub | By Supreme",
+  Title       = "Supreme Hub | AUT | By Supreme",
   SubTitle    = "Cool features :drool:",
   TabWidth    = 160,
   Size        = UDim2.fromOffset(580, 460),
@@ -45,11 +45,11 @@ local Toggle = Tabs.AutoLevel:AddToggle("AutoFarmToggle", {
 })
 Toggle:OnChanged(function(state)
   if state then
-    AUTMainModule.IsMonitoring = true
-    AUTMainModule.RunLevelWatcher()
+    AUTLevelModule.IsMonitoring = true
+    AUTLevelModule.RunLevelWatcher()
     Fluent:Notify{Title = "Auto-Leveling", Content = "Farming started."}
   else
-    AUTMainModule.Reset()
+    AUTLevelModule.Reset()
     Fluent:Notify{Title = "Auto-Leveling", Content = "Farming stopped."}
   end
 end)
@@ -61,7 +61,7 @@ Tabs.AutoLevel:AddSlider("FarmDelaySlider", {
   Min         = 0.05,
   Max         = 1,
   Rounding    = 2,
-  Callback    = function(val) AUTMainModule.FarmInterval = val end
+  Callback    = function(val) AUTLevelModule.FarmInterval = val end
 }):SetValue(0.1)
 
 Tabs.AutoLevel:AddDropdown("ShardRarity", {
@@ -70,13 +70,13 @@ Tabs.AutoLevel:AddDropdown("ShardRarity", {
   Values      = {"Common","Uncommon","Rare","Epic","Legendary","Mythic"},
   Default     = {"Common"},
   Multi       = true,
-  Callback    = function(rarities) AUTMainModule.SetShardRarity(rarities) end
+  Callback    = function(rarities) AUTLevelModule.SetShardRarity(rarities) end
 }):SetValue({"Common"})
 
 -- Teleports
 local selectedTeleport
 local locationNames = {}
-for name in pairs(AUTMainModule.TeleportLocations) do
+for name in pairs(AUTLevelModule.TeleportLocations) do
   table.insert(locationNames, name)
 end
 table.sort(locationNames)
@@ -87,7 +87,7 @@ section:AddDropdown("TeleportLocation", {
   Description = "Select where to teleport",
   Values      = locationNames,
   Multi       = false,
-  Callback    = function(choice) selectedTeleport = AUTMainModule.TeleportLocations[choice] end
+  Callback    = function(choice) selectedTeleport = AUTLevelModule.TeleportLocations[choice] end
 })
 
 section:AddButton{
@@ -108,6 +108,48 @@ section:AddButton{
     end
   end
 }
+
+local standSection = Tabs.Misc:AddSection("Stand")
+
+local autoAscToggle = standSection:AddToggle("AutoAscensionToggle", {
+    Title       = "Auto Ascension",
+    Description = "Automatically ascend your stand at level 200.",
+    Default     = false,
+})
+
+
+autoAscToggle:OnChanged(function(enabled)
+    AUTLevelModule.SetAutoAscend(enabled)
+    if enabled then
+        AUTLevelModule.IsMonitoring = true
+        AUTLevelModule.RunLevelWatcher()
+    else
+        AUTLevelModule.Reset()
+    end
+end)
+
+local visualsSection = Tabs.Misc:AddSection("Visuals")
+
+visualsSection:AddToggle("VFXRemoverToggle", {
+    Title = "VFX Remover",
+    Description = "Removes heavy or distracting visual effects.",
+    Default = false
+}):OnChanged(function(state)
+    if state then
+        AUTLevelModule.RemoveVFX()
+    end
+end)
+
+visualsSection:AddToggle("DesertFogRemoverToggle", {
+    Title = "Remove Desert Fog",
+    Description = "Disables fog and post-processing in the desert area.",
+    Default = false
+}):OnChanged(function(state)
+    AUTLevelModule.SetFogAutoRemove(state)
+    if state then
+        AUTLevelModule.RemoveDesertFog()
+    end
+end)
 
 -- Settings & Save
 InterfaceManager:SetLibrary(Fluent)
