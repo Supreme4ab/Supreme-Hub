@@ -1,11 +1,11 @@
-local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/refs/heads/main/Modules/CommonModule.lua"))()
-local Players = CommonUtil.GetService("Players")
-local TweenService = CommonUtil.GetService("TweenService")
+local CommonModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/refs/heads/main/Modules/CommonModule.lua"))()
+local Players = CommonModule.GetService("Players")
+local TweenService = CommonModule.GetService("TweenService")
 
-local AUTLevelUtil = {}
+local AUTMainModule = {}
 
 -- Teleport locations
-AUTLevelUtil.TeleportLocations = {
+AUTMainModule.TeleportLocations = {
   ["Alabasta"]            = Vector3.new(2085.529, 945.397, -2417.796),
   ["Beach"]               = Vector3.new(607.062, 917.219, -1989.912),
   ["Boss Spawn Room"]     = Vector3.new(19153.26, 910.548, 118.567),
@@ -33,7 +33,7 @@ AUTLevelUtil.TeleportLocations = {
 }
 
 -- Shard rarities
-AUTLevelUtil.ShardRarities = {
+AUTMainModule.ShardRarities = {
   Common    = {"ABILITY_14","ABILITY_1","ABILITY_10","ABILITY_10019","ABILITY_21","ABILITY_8881"},
   Uncommon  = {"ABILITY_33","ABILITY_7","ABILITY_7955","ABILITY_119","ABILITY_22"},
   Rare      = {"ABILITY_6","ABILITY_9","ABILITY_50923","ABILITY_350","ABILITY_2000","ABILITY_300000","ABILITY_4","ABILITY_2","ABILITY_732"},
@@ -42,37 +42,37 @@ AUTLevelUtil.ShardRarities = {
   Mythic    = {"ABILITY_911","ABILITY_42"},
 }
 
-AUTLevelUtil.AllowedAbilities = AUTLevelUtil.ShardRarities.Common
-AUTLevelUtil.ShardsPerAbility = 5
-AUTLevelUtil.FarmInterval = 0.1
+AUTMainModule.AllowedAbilities = AUTMainModule.ShardRarities.Common
+AUTMainModule.ShardsPerAbility = 5
+AUTMainModule.FarmInterval = 0.1
 local maxLevel = 200
 
 local lastLevel
 local farmThread, levelWatcherThread
 
-AUTLevelUtil.WatchingFog = false
-AUTLevelUtil.IsFarming = false
-AUTLevelUtil.IsMonitoring = false
-AUTLevelUtil.AutoAscend = false
+AUTMainModule.WatchingFog = false
+AUTMainModule.IsFarming = false
+AUTMainModule.IsMonitoring = false
+AUTMainModule.AutoAscend = false
 
 -- Remote references
-local RollBanner = CommonUtil.GetKnitRemote("ShopService",  "RF", "RollBanner")
-local ConsumeShards = CommonUtil.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP")
-local AscendRemote = CommonUtil.GetKnitRemote("LevelService", "RF", "AscendAbility")
+local RollBanner = CommonModule.GetKnitRemote("ShopService",  "RF", "RollBanner")
+local ConsumeShards = CommonModule.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP")
+local AscendRemote = CommonModule.GetKnitRemote("LevelService", "RF", "AscendAbility")
 
-function AUTLevelUtil.SetShardRarity(rarities)
+function AUTMainModule.SetShardRarity(rarities)
   local newList = {}
   for _, rarity in ipairs(rarities) do
-    local list = AUTLevelUtil.ShardRarities[rarity]
+    local list = AUTMainModule.ShardRarities[rarity]
     if list then
       for _, id in ipairs(list) do table.insert(newList, id) end
     end
   end
-  AUTLevelUtil.AllowedAbilities = newList
+  AUTMainModule.AllowedAbilities = newList
 end
 
-function AUTLevelUtil.SetAutoAscend(enabled)
-  AUTLevelUtil.AutoAscend = enabled == true
+function AUTMainModule.SetAutoAscend(enabled)
+  AUTMainModule.AutoAscend = enabled == true
 end
 
 local function GetAbilityObject()
@@ -80,14 +80,14 @@ local function GetAbilityObject()
   return data and data:FindFirstChild("Ability")
 end
 
-function AUTLevelUtil.GetCurrentLevel()
+function AUTMainModule.GetCurrentLevel()
   local ability = GetAbilityObject()
   return ability and ability:GetAttribute("AbilityLevel")
 end
 
-function AUTLevelUtil.BuildSellTable(allowed, shardsPerAbility)
-  local allowedAbilities = allowed or AUTLevelUtil.AllowedAbilities
-  local maxPerAbility = math.clamp(shardsPerAbility or AUTLevelUtil.ShardsPerAbility, 1, 15)
+function AUTMainModule.BuildSellTable(allowed, shardsPerAbility)
+  local allowedAbilities = allowed or AUTMainModule.AllowedAbilities
+  local maxPerAbility = math.clamp(shardsPerAbility or AUTMainModule.ShardsPerAbility, 1, 15)
   local sellTable = {}
   local gui = Players.LocalPlayer:FindFirstChild("PlayerGui")
   if not gui then return sellTable end
@@ -110,44 +110,44 @@ function AUTLevelUtil.BuildSellTable(allowed, shardsPerAbility)
   return sellTable
 end
 
-function AUTLevelUtil.RunFarmLoop()
+function AUTMainModule.RunFarmLoop()
   if farmThread and coroutine.status(farmThread) ~= "dead" then return end
   farmThread = task.spawn(function()
-    while AUTLevelUtil.IsFarming do
+    while AUTMainModule.IsFarming do
       pcall(function()
         if RollBanner then RollBanner:InvokeServer(1, "UShards", 10) end
       end)
-      local sellTable = AUTLevelUtil.BuildSellTable()
+      local sellTable = AUTMainModule.BuildSellTable()
       if next(sellTable) then
         pcall(function() if ConsumeShards then ConsumeShards:InvokeServer(sellTable) end end)
       end
-      task.wait(AUTLevelUtil.FarmInterval)
+      task.wait(AUTMainModule.FarmInterval)
     end
     farmThread = nil
   end)
 end
 
-function AUTLevelUtil.RunLevelWatcher(onAscend, onMax)
+function AUTMainModule.RunLevelWatcher(onAscend, onMax)
   if levelWatcherThread and coroutine.status(levelWatcherThread) ~= "dead" then return end
   levelWatcherThread = task.spawn(function()
-    while AUTLevelUtil.IsMonitoring do
-      local level = AUTLevelUtil.GetCurrentLevel()
+    while AUTMainModule.IsMonitoring do
+      local level = AUTMainModule.GetCurrentLevel()
       if not level then task.wait(1) continue end
       if level ~= lastLevel and level <= maxLevel then
         lastLevel = level
         if onAscend then onAscend(level) end
       end
       if level >= maxLevel then
-        AUTLevelUtil.IsFarming = false
+        AUTMainModule.IsFarming = false
         if onMax then onMax(level) end
-        if AUTLevelUtil.AutoAscend and AscendRemote then
+        if AUTMainModule.AutoAscend and AscendRemote then
           pcall(function() AscendRemote:InvokeServer(1800) end)
         end
         task.wait(5)
       else
-        if not AUTLevelUtil.IsFarming then
-          AUTLevelUtil.IsFarming = true
-          AUTLevelUtil.RunFarmLoop()
+        if not AUTMainModule.IsFarming then
+          AUTMainModule.IsFarming = true
+          AUTMainModule.RunFarmLoop()
         end
         task.wait(1)
       end
@@ -156,7 +156,7 @@ function AUTLevelUtil.RunLevelWatcher(onAscend, onMax)
   end)
 end
 
-function AUTLevelUtil.Teleport(position)
+function AUTMainModule.Teleport(position)
   local char = Players.LocalPlayer.Character
   if not char then return false end
   local root = char:FindFirstChild("HumanoidRootPart")
@@ -165,30 +165,30 @@ function AUTLevelUtil.Teleport(position)
   return true
 end
 
-function AUTLevelUtil.Reset()
-  AUTLevelUtil.IsFarming = false
-  AUTLevelUtil.IsMonitoring = false
+function AUTMainModule.Reset()
+  AUTMainModule.IsFarming = false
+  AUTMainModule.IsMonitoring = false
   farmThread = nil
   levelWatcherThread = nil
 end
 
-function AUTLevelUtil.SetFogAutoRemove(state)
-  AUTLevelUtil.WatchingFog = state
-  if state and not AUTLevelUtil.FogWatcherThread then
-    AUTLevelUtil.FogWatcherThread = task.spawn(function()
-      while AUTLevelUtil.WatchingFog do
+function AUTMainModule.SetFogAutoRemove(state)
+  AUTMainModule.WatchingFog = state
+  if state and not AUTMainModule.FogWatcherThread then
+    AUTMainModule.FogWatcherThread = task.spawn(function()
+      while AUTMainModule.WatchingFog do
         for _, objName in pairs({"DPAtmosphere", "DPBlur", "DPColorCorrection"}) do
           local effect = game.Lighting:FindFirstChild(objName)
           if effect then pcall(function() effect:Destroy() end) end
         end
         task.wait(1)
       end
-      AUTLevelUtil.FogWatcherThread = nil
+      AUTMainModule.FogWatcherThread = nil
     end)
   end
 end
 
-function AUTLevelUtil.RemoveVFX()
+function AUTMainModule.RemoveVFX()
   local function removeEffects(inst)
     for _, d in pairs(inst:GetDescendants()) do
       if d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") or d:IsA("Explosion") or
@@ -202,11 +202,11 @@ function AUTLevelUtil.RemoveVFX()
   if char then removeEffects(char) end
 end
 
-function AUTLevelUtil.RemoveDesertFog()
+function AUTMainModule.RemoveDesertFog()
   for _, objName in pairs({"DPAtmosphere", "DPBlur", "DPColorCorrection"}) do
     local obj = game:GetService("Lighting"):FindFirstChild(objName)
     if obj then obj:Destroy() end
   end
 end
 
-return AUTLevelUtil
+return AUTMainModule
