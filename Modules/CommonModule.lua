@@ -11,26 +11,26 @@ local Services = setmetatable({}, {
 --Knit Remote Cache
 local RemoteCache = {}
 
-local CommonUtil = {}
+local CommonModule = {}
 
 --Get Roblox services
-function CommonUtil.GetService(name)
+function CommonModule.GetService(name)
    return Services[name]
 end
 
 --Cache Roblox service
-function CommonUtil.WaitForService(name, timeout)
+function CommonModule.WaitForService(name, timeout)
    local result = game:WaitForChild(name, timeout or 5)
    if result then
        rawset(Services, name, result)
    else
-       warn("[CommonUtil] Service wait timeout:", name)
+       warn("[CommonModule] Service wait timeout:", name)
    end
    return result
 end
 
 --View all accessed services (for debug)
-function CommonUtil.ListAccessedServices()
+function CommonModule.ListAccessedServices()
    local list = {}
    for name in pairs(Services) do
        table.insert(list, name)
@@ -39,7 +39,7 @@ function CommonUtil.ListAccessedServices()
 end
 
 --Deep WaitForChild
-function CommonUtil.WaitForChildDeep(parent, path, timeout)
+function CommonModule.WaitForChildDeep(parent, path, timeout)
    local segments = string.split(path, "/")
    local current = parent
    for _, segment in ipairs(segments) do
@@ -54,12 +54,12 @@ function CommonUtil.WaitForChildDeep(parent, path, timeout)
 end
 
 --Get Knit Remote
-function CommonUtil.GetKnitRemote(serviceName, remoteType, remoteName)
+function CommonModule.GetKnitRemote(serviceName, remoteType, remoteName)
    local cacheKey = ("%s/%s/%s"):format(serviceName, remoteType, remoteName)
    if RemoteCache[cacheKey] then return RemoteCache[cacheKey] end
 
    local success, remote = pcall(function()
-       local Knit = CommonUtil.WaitForChildDeep(Services.ReplicatedStorage, "ReplicatedModules/KnitPackage/Knit")
+       local Knit = CommonModule.WaitForChildDeep(Services.ReplicatedStorage, "ReplicatedModules/KnitPackage/Knit")
        if not Knit then return nil end
 
        local servicesFolder = Knit:FindFirstChild("Services")
@@ -77,19 +77,19 @@ function CommonUtil.GetKnitRemote(serviceName, remoteType, remoteName)
    if success and remote then
        RemoteCache[cacheKey] = remote
    else
-       warn("[CommonUtil] Failed to get Knit remote:", cacheKey)
+       warn("[CommonModule] Failed to get Knit remote:", cacheKey)
    end
 
    return remote
 end
 
 --Get LocalPlayer (client only)
-function CommonUtil.GetLocalPlayer()
+function CommonModule.GetLocalPlayer()
    return Services.Players.LocalPlayer
 end
 
 --GC Table Scanner (matches if predicate returns true)
-function CommonUtil.GCScan(predicate)
+function CommonModule.GCScan(predicate)
    local matches = {}
    for _, v in ipairs(getgc(true)) do
        if typeof(v) == "table" then
@@ -103,7 +103,7 @@ function CommonUtil.GCScan(predicate)
 end
 
 --Auto-reconnect signal hook
-function CommonUtil.AutoReconnectSignal(signal, callback)
+function CommonModule.AutoReconnectSignal(signal, callback)
    local conn
    local function connect()
        if conn then conn:Disconnect() end
@@ -119,13 +119,13 @@ function CommonUtil.AutoReconnectSignal(signal, callback)
 end
 
 --Deep table debug printer
-function CommonUtil.DeepPrint(tbl, indent)
+function CommonModule.DeepPrint(tbl, indent)
    indent = indent or 0
    local pad = string.rep("    ", indent)
    for k, v in pairs(tbl) do
        if typeof(v) == "table" then
            print(pad .. tostring(k) .. " = {")
-           CommonUtil.DeepPrint(v, indent + 1)
+           CommonModule.DeepPrint(v, indent + 1)
            print(pad .. "}")
        else
            print(pad .. tostring(k) .. " = " .. tostring(v))
@@ -135,8 +135,8 @@ end
 
 --TP
 
-function CommonUtil.Teleport(position)
-	local player = CommonUtil.GetService("Players").LocalPlayer
+function CommonModule.Teleport(position)
+	local player = CommonModule.GetService("Players").LocalPlayer
 	local character = player and player.Character or player.CharacterAdded:Wait()
 	local rootPart = character:WaitForChild("HumanoidRootPart", 5)
 	if not rootPart then return false end
@@ -160,8 +160,8 @@ function CommonUtil.Teleport(position)
 	return true
 end
 
-function CommonUtil.Log(...)
+function CommonModule.Log(...)
    print("[SunniHub]", ...)
 end
 
-return CommonUtil
+return CommonModule
