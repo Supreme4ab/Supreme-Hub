@@ -14,11 +14,11 @@ local function safeLoad(url)
     return result
 end
 
-local Fluent = safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua")
-local SaveManager      = safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua")
-local InterfaceManager = safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua")
-local CommonModule   = safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Main/Modules/CommonModule.lua")
-local AUTMainModule = safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Modules/AUTMainlModule.lua")
+local Fluent =             safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua")
+local SaveManager      =   safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua")
+local InterfaceManager =   safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua")
+local CommonModule   =     safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Main/Modules/CommonModule.lua")
+local AUTMainModule =      safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Modules/AUTMainModule.lua")
 
 if not Fluent or not SaveManager or not InterfaceManager or not CommonModule or not AUTMainModule then
     warn("One or more required modules failed to load. Aborting.")
