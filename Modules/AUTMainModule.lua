@@ -1,4 +1,4 @@
-local CommonModule = require(script.Parent.CommonModule)
+local CommonModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Modules/CommonModule.lua"))()
 local Players = CommonModule.GetService("Players")
 
 local AUTMainModule = {}
