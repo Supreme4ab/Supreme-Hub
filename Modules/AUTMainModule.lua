@@ -3,7 +3,7 @@ local Players = CommonModule.GetService("Players")
 
 local AUTMainModule = {}
 
--- Public Configurable Tables
+-- Info Tables
 AUTMainModule.TeleportLocations = {
   ["Alabasta"]            = Vector3.new(2085.529, 945.397, -2417.796),
   ["Beach"]               = Vector3.new(607.062, 917.219, -1989.912),
