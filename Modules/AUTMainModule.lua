@@ -172,41 +172,43 @@ function AUTMainModule.Reset()
   levelWatcherThread = nil
 end
 
-function AUTMainModule.SetFogAutoRemove(state)
-  AUTMainModule.WatchingFog = state
-  if state and not AUTMainModule.FogWatcherThread then
-    AUTMainModule.FogWatcherThread = task.spawn(function()
-      while AUTMainModule.WatchingFog do
-        for _, objName in pairs({"DPAtmosphere", "DPBlur", "DPColorCorrection"}) do
-          local effect = game.Lighting:FindFirstChild(objName)
-          if effect then pcall(function() effect:Destroy() end) end
-        end
-        task.wait(1)
-      end
-      AUTMainModule.FogWatcherThread = nil
-    end)
-  end
-end
-
-function AUTMainModule.RemoveVFX()
-  local function removeEffects(inst)
-    for _, d in pairs(inst:GetDescendants()) do
-      if d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") or d:IsA("Explosion") or
-         d:IsA("Fire") or d:IsA("Smoke") or d:IsA("Sparkles") then
-        pcall(function() d:Destroy() end)
-      end
+function AUTMainModule.SetVFXAutoRemove(state)
+    AUTMainModule.WatchingVFX = state
+    if state and not AUTMainModule.VFXWatcherThread then
+        AUTMainModule.VFXWatcherThread = task.spawn(function()
+            while AUTMainModule.WatchingVFX do
+                local function removeEffects(inst)
+                    for _, d in pairs(inst:GetDescendants()) do
+                        if d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") or d:IsA("Explosion")
+                        or d:IsA("Fire") or d:IsA("Smoke") or d:IsA("Sparkles") then
+                            pcall(function() d:Destroy() end)
+                        end
+                    end
+                end
+                removeEffects(game.Workspace)
+                local char = Players.LocalPlayer.Character
+                if char then removeEffects(char) end
+                task.wait(1)
+            end
+            AUTMainModule.VFXWatcherThread = nil
+        end)
     end
-  end
-  removeEffects(game.Workspace)
-  local char = Players.LocalPlayer.Character
-  if char then removeEffects(char) end
 end
 
-function AUTMainModule.RemoveDesertFog()
-  for _, objName in pairs({"DPAtmosphere", "DPBlur", "DPColorCorrection"}) do
-    local obj = game:GetService("Lighting"):FindFirstChild(objName)
-    if obj then obj:Destroy() end
-  end
+function AUTMainModule.SetFogAutoRemove(state)
+    AUTMainModule.WatchingFog = state
+    if state and not AUTMainModule.FogWatcherThread then
+        AUTMainModule.FogWatcherThread = task.spawn(function()
+            while AUTMainModule.WatchingFog do
+                for _, objName in pairs({"DPAtmosphere", "DPBlur", "DPColorCorrection"}) do
+                    local effect = game:GetService("Lighting"):FindFirstChild(objName)
+                    if effect then pcall(function() effect:Destroy() end) end
+                end
+                task.wait(1)
+            end
+            AUTMainModule.FogWatcherThread = nil
+        end)
+    end
 end
 
 return AUTMainModule
