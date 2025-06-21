@@ -14,166 +14,147 @@ local function safeLoad(url)
     return result
 end
 
-local Fluent =             safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua")
-local SaveManager      =   safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua")
-local InterfaceManager =   safeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua")
-local CommonModule   =     safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Main/Modules/CommonModule.lua")
-local AUTMainModule =      safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Modules/AUTMainModule.lua")
+local rolibwaita = safeLoad("https://codeberg.org/Blukez/rolibwaita/raw/branch/master/Source.lua")
+local CommonModule = safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Main/Modules/CommonModule.lua")
+local AUTMainModule = safeLoad("https://raw.githubusercontent.com/Supreme4ab/Supreme-Hub/main/Modules/AUTMainModule.lua")
 
-if not Fluent or not SaveManager or not InterfaceManager or not CommonModule or not AUTMainModule then
+if not rolibwaita or not CommonModule or not AUTMainModule then
     warn("One or more required modules failed to load. Aborting.")
     return
 end
 
-local Window = Fluent:CreateWindow{
-  Title       = "Supreme Hub | AUT | By Supreme",
-  SubTitle    = "Cool features :drool:",
-  TabWidth    = 160,
-  Size        = UDim2.fromOffset(580, 460),
-  Acrylic     = true,
-  Theme       = "Dark",
-  MinimizeKey = Enum.KeyCode.LeftControl
-}
-
-local Tabs = {
-  Main      = Window:AddTab{Title = "Main",      Icon = "home"},
-  AutoLevel = Window:AddTab{Title = "Auto-Level",Icon = "activity"},
-  Misc      = Window:AddTab{Title = "Misc",      Icon = "map"},
-  Settings  = Window:AddTab{Title = "Settings",  Icon = "settings"},
-}
-
-Fluent:Notify{
-  Title    = "SunnyDale Loaded",
-  Content  = "AUT Level Hub is now active.",
-  Duration = 5
-}
-
--- Auto-Level UI
-Tabs.AutoLevel:AddParagraph{
-  Title   = "Auto-Level System",
-  Content = "Automatically rolls banners, converts shards, and levels up."
-}
-
-local Toggle = Tabs.AutoLevel:AddToggle("AutoFarmToggle", {
-  Title       = "Enable Auto-Level",
-  Description = "Runs farm + XP logic in loop.",
-  Default     = false
+local Window = rolibwaita:NewWindow({
+    Name = "Supreme Hub | AUT | By Supreme",
+    Keybind = "LeftControl",
+    UseCoreGui = true,
+    PrintCredits = true
 })
 
-Toggle:OnChanged(function(state)
-  if state then
-    AUTMainModule.IsMonitoring = true
-    AUTMainModule.RunLevelWatcher()
-    Fluent:Notify{Title = "Auto-Leveling", Content = "Farming started."}
-  else
-    AUTMainModule.Reset()
-    Fluent:Notify{Title = "Auto-Leveling", Content = "Farming stopped."}
-  end
-end)
+local TabMain = Window:NewTab({Name = "Main", Icon = "home"})
+local TabAutoLevel = Window:NewTab({Name = "Auto-Level", Icon = "activity"})
+local TabMisc = Window:NewTab({Name = "Misc", Icon = "map"})
+local TabSettings = Window:NewTab({Name = "Settings", Icon = "settings"})
 
-Tabs.AutoLevel:AddSlider("FarmDelaySlider", {
-  Title       = "Farm Delay (Seconds)",
-  Description = "Time between shard conversion cycles.",
-  Default     = 0.1,
-  Min         = 0.05,
-  Max         = 1,
-  Rounding    = 2,
-  Callback    = function(val) AUTMainModule.FarmInterval = val end
-}):SetValue(0.1)
+local SectionAutoLevel = TabAutoLevel:NewSection({
+    Name = "Auto-Level System",
+    Description = "Automatically rolls banners, converts shards, and levels up."
+})
 
-Tabs.AutoLevel:AddDropdown("ShardRarity", {
-  Title       = "Shard Rarity to Sell",
-  Description = "Select one or more rarity tiers to farm for XP.",
-  Values      = {"Common","Uncommon","Rare","Epic","Legendary","Mythic"},
-  Default     = {"Common"},
-  Multi       = true,
-  Callback    = function(rarities) AUTMainModule.SetShardRarity(rarities) end
-}):SetValue({"Common"})
+local ToggleAutoFarm = SectionAutoLevel:NewToggle({
+    Name = "Enable Auto-Level",
+    Description = "Runs farm + XP logic in loop.",
+    CurrentState = false,
+    Callback = function(state)
+        if state then
+            AUTMainModule.IsMonitoring = true
+            AUTMainModule.RunLevelWatcher()
+        else
+            AUTMainModule.Reset()
+        end
+    end
+})
 
--- Teleports
-local selectedTeleport
+SectionAutoLevel:NewSlider({
+    Name = "Farm Delay (Seconds)",
+    Description = "Time between shard conversion cycles.",
+    MinMax = {0.05, 1},
+    Increment = 0.01,
+    CurrentValue = 0.1,
+    Callback = function(val)
+        AUTMainModule.FarmInterval = val
+    end
+})
+
+local rarities = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic"}
+local selectedRarities = {}
+for _, rarity in ipairs(rarities) do
+    local default = rarity == "Common"
+    selectedRarities[rarity] = default
+    SectionAutoLevel:NewToggle({
+        Name = rarity .. " Shards",
+        Description = "Include " .. rarity .. " shards in farming.",
+        CurrentState = default,
+        Callback = function(state)
+            selectedRarities[rarity] = state
+            local activeRarities = {}
+            for r, s in pairs(selectedRarities) do
+                if s then table.insert(activeRarities, r) end
+            end
+            AUTMainModule.SetShardRarity(activeRarities)
+        end
+    })
+end
+
+local SectionTeleports = TabMisc:NewSection({Name = "Teleports"})
 local locationNames = {}
 for name in pairs(AUTMainModule.TeleportLocations or {}) do
-  table.insert(locationNames, name)
+    table.insert(locationNames, name)
 end
 table.sort(locationNames)
 
-local section = Tabs.Misc:AddSection("Teleports")
-section:AddDropdown("TeleportLocation", {
-  Title       = "Choose a Location",
-  Description = "Select where to teleport",
-  Values      = locationNames,
-  Multi       = false,
-  Callback    = function(choice) selectedTeleport = AUTMainModule.TeleportLocations[choice] end
+local selectedLocation
+SectionTeleports:NewDropdown({
+    Name = "Choose a Location",
+    Description = "Select where to teleport",
+    Choices = locationNames,
+    CurrentState = locationNames[1] or "",
+    Callback = function(choice)
+        selectedLocation = choice
+    end
 })
 
-section:AddButton{
-  Title       = "Teleport",
-  Description = "Instantly teleport to the selected location",
-  Callback    = function()
-    if not selectedTeleport then
-      Fluent:Notify{Title="Teleport Failed",Content="You must select a location.",Duration=3}
-      return
+SectionTeleports:NewButton({
+    Name = "Teleport",
+    Description = "Instantly teleport to the selected location",
+    Callback = function()
+        if not selectedLocation then
+            return
+        end
+        local position = AUTMainModule.TeleportLocations[selectedLocation]
+        if position then
+            local success, err = pcall(function()
+                CommonModule.Teleport(position)
+            end)
+            if not success then
+                warn("Teleport error: " .. tostring(err))
+            end
+        end
     end
-    local success, err = pcall(function()
-      if not CommonModule.Teleport(selectedTeleport) then
-        error("Teleport returned false")
-      end
-    end)
-    if not success then
-      Fluent:Notify{Title="Teleport Error",Content=tostring(err),Duration=5}
-    end
-  end
-}
+})
 
-local standSection = Tabs.Misc:AddSection("Stand")
-
-local autoAscToggle = standSection:AddToggle("AutoAscensionToggle", {
-    Title       = "Auto Ascension",
+local SectionStand = TabMisc:NewSection({Name = "Stand"})
+SectionStand:NewToggle({
+    Name = "Auto Ascension",
     Description = "Automatically ascend your stand at level 200.",
-    Default     = false,
+    CurrentState = false,
+    Callback = function(state)
+        AUTMainModule.SetAutoAscend(state)
+        if state then
+            AUTMainModule.IsMonitoring = true
+            AUTMainModule.RunLevelWatcher()
+        else
+            AUTMainModule.Reset()
+        end
+    end
 })
 
-autoAscToggle:OnChanged(function(enabled)
-    AUTMainModule.SetAutoAscend(enabled)
-    if enabled then
-        AUTMainModule.IsMonitoring = true
-        AUTMainModule.RunLevelWatcher()
-    else
-        AUTMainModule.Reset()
-    end
-end)
-
-local visualsSection = Tabs.Misc:AddSection("Visuals")
-
-visualsSection:AddToggle("VFXRemoverToggle", {
-    Title = "VFX Remover",
+local SectionVisuals = TabMisc:NewSection({Name = "Visuals"})
+SectionVisuals:NewToggle({
+    Name = "VFX Remover",
     Description = "Removes heavy or distracting visual effects.",
-    Default = false
-}):OnChanged(function(state)
-    if state then
-        AUTMainModule.RemoveVFX()
+    CurrentState = false,
+    Callback = function(state)
+        AUTMainModule.SetVFXAutoRemove(state)
     end
-end)
+})
 
-visualsSection:AddToggle("DesertFogRemoverToggle", {
-    Title = "Remove Desert Fog",
+SectionVisuals:NewToggle({
+    Name = "Remove Desert Fog",
     Description = "Disables fog and post-processing in the desert area.",
-    Default = false
-}):OnChanged(function(state)
-    AUTMainModule.SetFogAutoRemove(state)
-    if state then
-        AUTMainModule.RemoveDesertFog()
+    CurrentState = false,
+    Callback = function(state)
+        AUTMainModule.SetFogAutoRemove(state)
     end
-end)
-
--- Settings & Save
-InterfaceManager:SetLibrary(Fluent)
-SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetFolder("SupremeHub")
-SaveManager:SetFolder("SupremeHub/Config")
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:BuildConfigSection(Tabs.Settings)
+})
 
 Window:SelectTab(2)
-SaveManager:LoadAutoloadConfig()
